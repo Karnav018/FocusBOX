@@ -73,12 +73,12 @@ The system provides real-time visual feedback:
 
 | **Focus Mode** | **Stress Mode** |
 |:---:|:---:|
-| ![Focus](screenshots/focus.jpg) | ![Stress](screenshots/stress.jpg) |
+| ![Focus](screenshots/Focus.jpg) | ![Stress](screenshots/Stress.jpg) |
 | *Green Box: Neutral/Calm* | *Red Box: Stress/Anger* |
 
 | **Happpy Mode** | **Locked (Inertia)** |
 |:---:|:---:|
-| ![Happy](screenshots/happy.jpg) | ![Locked](screenshots/locked.jpg) |
+| ![Happy](screenshots/Happy.jpg) | ![Locked](screenshots/Locked.jpg) |
 | *Magenta Box: Happiness* | *Timer: Mood Locked* |
 
 | State | Description |
