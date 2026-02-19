@@ -12,7 +12,7 @@ Staying focused is hard.
 **Focus Guard** is not just an AI project; it's a **proactive agent** that watches your emotional state and adjusts your environment to keep you in the zone.
 
 It uses a **Computer Vision pipeline** to detect:
-1.  **FOCUS (Neutral)**: Plays Deep Work / Hollywood Scores.
+1.  **FOCUS (Neutral)**: Plays Focus Pop / Soft Vocals.
 2.  **STRESS (Angry/Fear)**: Activates **"Rescue Protocol"** (Calming Bollywood/Lofi).
 3.  **HAPPY**: Locks in the vibe with Upbeat Gujarati Romantic Hits.
 4.  **DISTRACTION**: Pauses music if you are talking or distracted.
@@ -80,7 +80,7 @@ The system provides real-time visual feedback:
 
 | State | Description |
 |---|---|
-| **FOCUS** | Green Box. Playing: *Interstellar Soundtrack* |
+| **FOCUS** | Green Box. Playing: *Focus Flow / Soft Pop* |
 | **STRESS** | Red Box. Playing: *Channa Mereya* |
 | **LOCKED** | "LOCKED (160s)" text visible. Maintaining the vibe. |
 

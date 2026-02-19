@@ -4,6 +4,7 @@ import spotipy
 from spotipy.oauth2 import SpotifyOAuth
 from dotenv import load_dotenv
 import time
+import random
 
 # Load environment variables if .env exists
 load_dotenv()
@@ -81,14 +82,27 @@ class SpotifyClient:
             # print(f"⚠️ Could not set volume: {e}") # Silenced to avoid spam
             return False
 
-    def search_playlist(self, query):
-        """Searches for a playlist and returns its URI."""
+    def search_playlist(self, query, limit=1, random_pick=False):
+        """
+        Searches for playlists.
+        If random_pick is True, picks a random one from the top 'limit' results.
+        """
         if not self.sp: return None
         try:
-            results = self.sp.search(q=query, type='playlist', limit=1)
+            results = self.sp.search(q=query, type='playlist', limit=limit)
             # Check if results exist and have items
             if results and 'playlists' in results and results['playlists'] and results['playlists']['items']:
-                return results['playlists']['items'][0]['uri']
+                items = results['playlists']['items']
+                
+                if random_pick:
+                    # Pick a random one from the results
+                    choice = random.choice(items)
+                    print(f"🎲 Randomly picked: '{choice['name']}' from top {len(items)} results.")
+                    return choice['uri']
+                else:
+                    # Return the top result
+                    return items[0]['uri']
+                    
         except Exception as e:
             print(f"Error searching playlist: {e}")
         return None
