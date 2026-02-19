@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+venv/
+ENV/
+
+# Distribution / Packaging
+build/
+dist/
+*.egg-info/
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+
+# Project Specific
+src/models/*.h5  # Keep model if small enough, but usually ignore big files. User said to keep model? It's Mini-Xception so <10MB probably fine.
+# But generally ignore models if >100MB. Mini-Xception is small.
+# Use standard gitignore for Python projects.
+
+# Screenshots (Optional: ignore if just testing, but needed for README)
+# screenshots/
