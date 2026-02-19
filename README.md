@@ -1,9 +1,6 @@
 # 🧠 Focus Guard AI
 **The Smart Desk Guardian that Protects your Flow State.**
 
-![Focus Guard Header](https://via.placeholder.com/800x200?text=Focus+Guard+AI)
-*(Add your own screenshot here: screenshots/focus_guard_EXAMPLE.jpg)*
-
 ## 🚨 The Problem
 Staying focused is hard. 
 - You sit down to work/study.
