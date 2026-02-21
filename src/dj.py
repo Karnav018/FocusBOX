@@ -1,10 +1,9 @@
 
 import time
 import os
-import time
-import os
 import random
 import threading
+import typing
 try:
     import pygame
 except ImportError:
@@ -19,6 +18,8 @@ class AIDJ:
     """
     def __init__(self):
         self.state = "FOCUS"
+        self.target_state = "FOCUS"
+        self._switch_thread: typing.Optional[threading.Thread] = None
         self.last_switch_time = time.time()
         self.cooldown = 30  # Increased to 30s for stability
         
@@ -42,24 +43,58 @@ class AIDJ:
     def update_state(self, new_state):
         """
         Called every frame by main.py.
-        Decides if we need to switch the music.
+        Registers the target mood and starts the transition worker if needed.
         """
-        if new_state == self.state:
-            return # No change
+        if new_state == self.target_state:
+            return # No change in target mood
             
-        # Check Cooldown (Dynamic)
-        # If currently HAPPY, hold for 90s. Else default 30s.
-        required_cooldown = 90 if self.state == "HAPPY" else self.cooldown
+        print(f"🎯 Target Mood Updated: {self.target_state} -> {new_state}")
+        self.target_state = new_state
         
-        if time.time() - self.last_switch_time < required_cooldown:
-            return
+        # Start transition thread if not already running
+        start_thread = False
+        if self._switch_thread is None:
+            start_thread = True
+        elif hasattr(self._switch_thread, "is_alive") and not self._switch_thread.is_alive():
+            start_thread = True
+            
+        if start_thread:
+            new_thread = threading.Thread(target=self._transition_worker, daemon=True)
+            self._switch_thread = new_thread
+            new_thread.start()
 
-        print(f"🔄 Mood Switch: {self.state} -> {new_state}")
-        self.state = new_state
-        self.last_switch_time = time.time()
-        
-        # Run music trigger in background thread to avoid freezing video
-        threading.Thread(target=self.trigger_music, args=(new_state,), daemon=True).start()
+    def _transition_worker(self):
+        """
+        Runs in background to wait for the optimal time to switch tracks.
+        """
+        while self.target_state != self.state:
+            target = self.target_state
+            
+            # Check Cooldown (Dynamic)
+            # If currently HAPPY, hold for 90s. Else default 30s.
+            required_cooldown = 90 if self.state == "HAPPY" else self.cooldown
+            
+            if time.time() - self.last_switch_time < required_cooldown:
+                time.sleep(2)
+                continue
+
+            # Check Spotify remaining time to delay transition
+            if self.use_spotify:
+                remaining = self.spotify.get_remaining_time()
+                if remaining is not None and remaining > 15.0:
+                    # Sleep dynamically but check frequently in case target changes
+                    sleep_time = min(remaining - 15.0, 5.0)
+                    time.sleep(sleep_time)
+                    continue
+
+            # If target changed during our sleep, the loop will catch it
+            if target != self.target_state:
+                continue
+
+            print(f"🔄 Mood Switch: {self.state} -> {target}")
+            self.state = target
+            self.last_switch_time = time.time()
+            self.trigger_music(target)
 
     def trigger_music(self, state):
         """
@@ -108,47 +143,36 @@ class AIDJ:
             print("Using Local Fallback.")
             self.play_local_file(self.sounds[fallback_key])
 
+
     def play_happy_flow(self):
-        # HAPPY = Gujarati Romantic
-        queries = [
-    "Gujarati Positive Vibes",
-    "Best of Aditya Gadhvi",
-    "Modern Gujarati Hits",
-    "Kinjal Dave Non Stop",
-    "Gujarati Party Mix",
-    "Urban Gujarati Feel Good",
-    "Coke Studio Gujarati",
-    "Amit Trivedi Gujarati Hits"
-]
+        # HAPPY = Gujarati Romantic * energetic, no garba and bhajan.
+        queries = ["Gujarati Romantic Hits 2026", "Gujarati Urban Pop", "Jigardan Gadhavi", "Priya Saraiya", "Gujarati Love Anthems"]
         self._smart_play("HAPPY VIBES", queries, "lofi")
 
     def play_rescue_protocol(self):
-        # RESCUE = Bollywood (Soothing/Sad/Acoustic)
-        queries = [
-    "Bollywood Chill Instrumental",
-    "Hindi Coffee Shop Vibes",
-    "Soft Bollywood Piano",
-    "Coke Studio Calm",
-    "Bollywood Midnight Lofi",
-    "Prateek Kuhad Radio",
-    "Acoustic Hindi Hits",
-    "Rainy Day Bollywood"
-]
+        # RESCUE = Bollywood (Soothing/Sad/Trending/New/Recently release movies song)
+        queries = ["Latest Bollywood Sad 2026", "Arijit Singh Emotional Hits", "Bollywood Acoustic Melodies", "B Praak Sad Songs", "Hindi Lofi Revibe"]
         self._smart_play("RESCUE PROTOCOL", queries, "rain")
 
     def play_focus_flow(self):
-        # FOCUS = Pop/Acoustic with Vocals
-        queries = [
-    "Bollywood Instrumental for Focus",
-    "Hindi Lofi Beats (No Lyrics)",
-    "Soft Sitar & Tabla Fusion",
-    "Bollywood Piano Study",
-    "Deep Focus Bollywood",
-    "Indian Classical Instrumental Relax",
-    "Peaceful Hindi Flute",
-    "Sufi Chill Instrumental"
-]
+        # FOCUS = Pop/Trending/New/Recently release movies song/espessially bollywood
+        queries = ["Trending Bollywood 2026", "Fresh Hindi Pop", "Bollywood Chill Hits", "New Release Bollywood", "Indian Indie Pop Focus"]
         self._smart_play("FOCUS FLOW", queries, "lofi")
+        
+    # def play_happy_flow(self):
+    #     # HAPPY = Gujarati Romantic
+    #     queries = ["Gujarati Romantic Hits", "Gujarati Love Songs", "Kinjal Dave", "Geeta Rabari", "Gujarati Wedding Songs"]
+    #     self._smart_play("HAPPY VIBES", queries, "lofi")
+
+    # def play_rescue_protocol(self):
+    #     # RESCUE = Bollywood (Soothing/Sad/Acoustic)
+    #     queries = ["Bollywood Lofi", "Bollywood Acoustic", "Sad Hindi Songs", "Arijit Singh", "Bollywood Unplugged"]
+    #     self._smart_play("RESCUE PROTOCOL", queries, "rain")
+
+    # def play_focus_flow(self):
+    #     # FOCUS = Pop/Acoustic with Vocals
+    #     queries = ["Focus Flow", "Chill Pop Hits", "Acoustic Pop Focus", "Deep Focus with Vocals", "Soft Pop Study"]
+    #     self._smart_play("FOCUS FLOW", queries, "lofi")
             
     def _get_playlist(self, query):
         """Helper to find/cache playlists."""
@@ -156,7 +180,7 @@ class AIDJ:
             return self.playlist_cache[query]
         
         print(f"🔍 Searching Spotify for: '{query}'...")
-        # DEEP DIVE: Fetch top 10 and pick random one for variety
+        # DEEP DIVE: Fetch top 10 and pick random one for variety (Limit=10 to avoid 400 Error)
         uri = self.spotify.search_playlist(query, limit=10, random_pick=True)
         if uri:
             self.playlist_cache[query] = uri
