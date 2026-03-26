@@ -85,6 +85,21 @@ class SpotifyClient:
             # print(f"⚠️ Could not set volume: {e}") # Silenced to avoid spam
             return False
 
+    def get_current_track(self):
+        """Returns {'track': str, 'artist': str} for the currently playing song, or None."""
+        if not self.sp: return None
+        try:
+            playback = self.sp.current_playback()
+            if playback and playback.get('is_playing') and playback.get('item'):
+                item = playback['item']
+                track_name = item.get('name', 'Unknown')
+                artists = item.get('artists', [])
+                artist_name = artists[0]['name'] if artists else 'Unknown'
+                return {'track': track_name, 'artist': artist_name}
+        except Exception:
+            pass
+        return None
+
     def get_remaining_time(self):
         """Returns the remaining time of the current track in seconds. None if not playing."""
         if not self.sp: return None

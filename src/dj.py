@@ -21,24 +21,36 @@ class AIDJ:
         self.target_state = "FOCUS"
         self._switch_thread: typing.Optional[threading.Thread] = None
         self.last_switch_time = time.time()
-        self.cooldown = 30  # Increased to 30s for stability
-        
+        self.cooldown = 20  # Base cooldown; opposite-mood switches use 10s (see _transition_worker)
+
         # Initialize Audio Engines
         self.spotify = SpotifyClient()
         self.use_spotify = self.spotify.sp is not None
-        
+
         if pygame:
             pygame.mixer.init()
-            
+
         # Assets (Placeholders for now)
         self.sounds = {
             "rain": "src/assets/rain.wav",
             "lofi": "src/assets/lofi.wav"
         }
-        
+
         # Cache for found playlists so we don't search every time
         self.playlist_cache = {}
-        self.failed_queries = set() # optimization: don't retry known bad queries
+        self.failed_queries = set()  # optimization: don't retry known bad queries
+
+        # Now Playing cache — updated every 5s in background (so main loop has zero latency)
+        self.now_playing: typing.Optional[typing.Dict[str, str]] = None
+        _poll = threading.Thread(target=self._track_poller, daemon=True)
+        _poll.start()
+
+    def _track_poller(self):
+        """Background thread: refreshes now_playing every 5s with zero impact on the main loop."""
+        while True:
+            if self.use_spotify:
+                self.now_playing = self.spotify.get_current_track()
+            time.sleep(5)
 
     def update_state(self, new_state):
         """
@@ -66,14 +78,19 @@ class AIDJ:
     def _transition_worker(self):
         """
         Runs in background to wait for the optimal time to switch tracks.
+        Waits until last 15s of current song, then switches.
         """
         while self.target_state != self.state:
             target = self.target_state
-            
-            # Check Cooldown (Dynamic)
-            # If currently HAPPY, hold for 90s. Else default 30s.
-            required_cooldown = 90 if self.state == "HAPPY" else self.cooldown
-            
+
+            # Cooldown logic:
+            # - Switching to a completely different mood (e.g. HAPPY -> STRESS): short 10s cooldown
+            # - Switching within the same "vibe" (e.g. FOCUS -> FOCUS after inertia): normal 20s
+            # This prevents the long HAPPY cooldown from blocking urgent mood changes.
+            opposite_switch = (self.state == "HAPPY" and target == "STRESS") or \
+                              (self.state == "STRESS" and target == "HAPPY")
+            required_cooldown = 10 if opposite_switch else self.cooldown
+
             if time.time() - self.last_switch_time < required_cooldown:
                 time.sleep(2)
                 continue
