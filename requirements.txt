@@ -1,0 +1,41 @@
+# Focus Guard — pinned dependencies
+#
+# One file, both machines. Environment markers pick the right build:
+#   Mac (webcam app + inference):  pip install -r requirements.txt
+#   Ubuntu GPU VM (training):      pip install -r requirements.txt
+#
+# Python 3.11 on both — TensorFlow 2.15 supports 3.9-3.11 only.
+#
+# GPU: tensorflow[and-cuda] bundles the CUDA 12.2 / cuDNN 8.9 runtime, so the VM
+# needs an NVIDIA driver (>= 525) but no system CUDA install. 2.15.1 is pinned to
+# match the Mac's 2.15.0 so .h5 checkpoints move between machines unchanged.
+#
+# Blackwell cards (RTX 50xx / B-series, sm_120) have no kernels in this release:
+# comment the linux line below, install the latest `tensorflow[and-cuda]` instead,
+# and move models as .tflite (notebooks/focus_guard_v2.ipynb, last cell).
+
+# --- deep learning ---
+tensorflow[and-cuda]==2.15.1 ; sys_platform == "linux"
+tensorflow==2.15.0 ; sys_platform == "darwin"
+tensorflow-metal==1.1.0 ; sys_platform == "darwin"
+numpy==1.26.4  # TF 2.15 requires numpy < 2
+
+# --- training / evaluation ---
+scikit-learn==1.8.0
+scipy==1.17.1  # hard dependency of sklearn; importing sklearn fails without it
+matplotlib==3.10.8
+
+# --- computer vision ---
+# headless on the VM: opencv-python needs libGL, which a server install lacks
+opencv-python-headless==4.11.0.86 ; sys_platform == "linux"
+opencv-python==4.11.0.86 ; sys_platform == "darwin"
+mediapipe==0.10.32 ; sys_platform == "darwin"  # gesture control; pulls opencv-contrib-python
+
+# --- app runtime (Mac only) ---
+spotipy==2.25.2
+python-dotenv==1.2.1
+pygame==2.6.1 ; sys_platform == "darwin"
+
+# --- notebook workflow ---
+jupyterlab==4.6.3
+ipykernel==7.3.0
