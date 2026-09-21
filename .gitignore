@@ -38,3 +38,7 @@ src/models/*.h5  # Keep model if small enough, but usually ignore big files. Use
 data_clahe/
 runs/
 .ipynb_checkpoints/
+
+# Trained models move by scp, not git (the v3 ensemble is 113MB — over GitHub's 100MB limit)
+src/models/*.onnx
+src/models/*.onnx.data
